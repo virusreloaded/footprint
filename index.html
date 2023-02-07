@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+<<<<<<< HEAD
+		<title>FootPrint</title>
+=======
+		<title>Apparel</title>
+>>>>>>> 4ab59542b080d4e8b7aa7e947d815cedcdf4d161
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<meta property="og:title" content="Test project">
+		<meta name="twitter:title" content="Test project">
+		
+		<meta name="description" content="Description of the project goes here
+
+		">
+		<meta property="og:description" content="Description of the project goes here
+
+		">
+		<meta name="twitter:description" content="Description of the project goes here
+
+		">
+		
+		<meta property="og:image" content="img/bg_social_media.jpg">
+		<meta name="twitter:image" content="img/bg_social_media.jpg">
+		<link rel="icon" href="favicon.svg">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;500&display=swap" rel="stylesheet">
+		<link type="text/css" rel="stylesheet" href="css/style.css">
+		<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+		<script type="text/javascript" src="js/tween.js"></script>
+		<script type="x-shader/x-vertex" id="vertexshader">
+
+			varying vec2 vUv;
+
+			void main() {
+
+				vUv = uv;
+
+				gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+			}
+
+		</script>
+
+		<script type="x-shader/x-fragment" id="fragmentshader">
+
+			uniform sampler2D baseTexture;
+			uniform sampler2D bloomTexture;
+
+			varying vec2 vUv;
+
+			void main() {
+
+				gl_FragColor = ( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) );
+
+			}
+
+		</script>
+	</head>
+
+	<body>
+		<header id="header">
+			<nav id="nav">
+				<div class="main_menu" id="top-menu">
+					<div class="logo_main">
+						<a href="#intro"><img src="img/logo.png"></a>
+					</div>
+					<div class="logo_main2">
+						<a href="#intro"><img src="img/logo_white.png"></a>
+					</div>
+					<div class="menu_item"><a href="#how">HOW IT WORKS?</a></div>
+					<div class="menu_item"><a href="#liquidity">LIQUIDITY</a></div>
+					<div class="menu_item"><a href="#solution">SOLUTION</a></div>
+					<div class="menu_item"><a href="#contacts">CONTACT US</a></div>
+				</div>
+			</nav>
+		</header>
+		<section id="intro">
+			<div class="mobile_container">
+				<img class="mobile" src="img/logo_white.png">
+			</div>
+			<div class="hero_container">
+				<div class="hero">
+					AI Crypto Liquid Index Fund<br>
+					Giving the Crowd Influence over Innovation
+				</div>
+			</div>
+		</section>
+		<section id="how" class="odd">
+			<div class="container_main">
+				<div class="header_main">Traditional VC Model</div>
+				<div class="content">
+					Limited partners invest in companies via a Venture Capital Fund. VC firms give high returns to limited partners and accepts a 2/20 management fee (2% mgmt fee: 20% carry)
+					<br>
+					<img class="" src="img/scheme2.png">
+				</div>
+				<div class="header_main">Traditional VC’s Liquidity Problem</div>
+				<img class="" src="img/scheme3.png">
+				<div class="header_main">Regulations have reduced number of liquidity events + killed public equity markets</div>
+				<img class="" src="img/scheme4.png">
+			</div>
+		</section>
+		<section id="liquidity" class="even">
+			<div class="container_main">
+				<div class="header_main">Crypto Liquid VC Model</div>
+				<div class="header_main">Problem</div>
+				<img class="icon" src="img/money_block.png">
+				<div class="content">
+					Usually investments with high potential profitability are blocked for 3 years minimum in venture capital
+				</div>
+				<div class="header_main">We solved this</div>
+				<div class="content">
+					This means an investor's money is not blocked, the money is liquid, and their is near certainty of some level of profits.
+				</div>
+				<img class="" src="img/scheme5.png">
+				<div class="header_main">The Liquidity of a Hedge Fund combined with the Profitability of a Venture Fund</div>
+				<div class="content">
+					Investing in the companies sourced, verified, and advised, by Liquid VC
+				</div>
+				<img class="" src="img/scheme6.png">
+			</div>
+		</section>
+		<section id="solution" class="odd">
+			<div class="container_main">
+				<div class="header_main">Liquid VC Solution</div>
+				<img class="" src="img/scheme7.png">
+			</div>
+		</section>
+		<section id="contacts"  class="even">
+			<div class="container_main">
+				<div class="header_main">CONTACT US</div>
+				<input type="text" id="name" placeholder="Your name">
+				<input type="text" id="company" placeholder="Your company">
+				<textarea id="msg" placeholder="Message"></textarea>
+				<div class="button_send">SEND</div>
+			</div>
+		</section>
+		<footer>
+			<div class="copyright">Copyright AI Crypto fund 2017. All right reserved.</div>
+			<img class="pwr" src="img/rckt_logo_light.png">
+		</footer>
+		<div class="loader2">
+			<div id="progress" style="display: block;">
+				<img class="logo_load" src="img/logo_white.png">
+				<center>
+					LOADING
+					<div id="progressbar" class="shadow"><div id="bar" class="shadow"></div></div>
+				</center>
+			</div>
+		</div>
+
+		<div class="loader2">
+			<div id="progress" style="display: block;">
+				<!-- <img class="logo_load" src="svg/logo-white.svg"> -->
+				<center>
+					LOADING
+					<div id="progressbar" class="shadow"><div id="bar" class="shadow"></div></div>
+				</center>
+			</div>
+		</div>
+		<!-- Import maps polyfill -->
+		<!-- Remove this when import maps will be widely supported -->
+		<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "./build/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
+
+		<script type="module" src='js/app.js'></script>
+
+	</body>
+</html>
