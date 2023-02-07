@@ -42,6 +42,8 @@ let barwidth = 250;
 let model,model2, model3, model4;
 let objectsToRotate = [];
 let assets_loaded = false;
+let isMoving = false;
+let topPos = 0;
 
 init();
 
@@ -69,6 +71,7 @@ function init() {
 			$( "#progress" ).fadeOut('300');
 			$(".loader2").fadeOut("slow");
 			animate();
+			console.log(objectsToRotate)
 		}
 	};
 	var onProgress = function ( xhr ) {
@@ -99,13 +102,7 @@ function init() {
 			
 				node.layers.enable( BLOOM_SCENE );
 				if ( node.name.includes('Shell') ) {
-
-					// objectsToRotate.push(node)
-					// if (node.children.length > 0){
-					// 	node.children[1].layers.enable( BLOOM_SCENE );
-					// } else {
-					// 	node.layers.enable( BLOOM_SCENE );
-					// }
+					objectsToRotate.push(node)
 				}
 				
 			});
@@ -124,15 +121,9 @@ function init() {
 			model2.traverse( function( node ) {
 
 				node.layers.enable( BLOOM_SCENE );
-			
-				// if ( node.name.includes('Shell') ) {
-				// 	objectsToRotate.push(node)
-				// 	if (node.children.length > 0){
-				// 		node.children[1].layers.enable( BLOOM_SCENE );
-				// 	} else {
-				// 		node.layers.enable( BLOOM_SCENE );
-				// 	}
-				// }
+				if ( node.name.includes('Shell') ) {
+					objectsToRotate.push(node)
+				}
 				
 			});
 	
@@ -150,15 +141,9 @@ function init() {
 			model3.traverse( function( node ) {
 
 				node.layers.enable( BLOOM_SCENE );
-			
-				// if ( node.name.includes('Shell') ) {
-				// 	objectsToRotate.push(node)
-				// 	if (node.children.length > 0){
-				// 		node.children[1].layers.enable( BLOOM_SCENE );
-				// 	} else {
-				// 		node.layers.enable( BLOOM_SCENE );
-				// 	}
-				// }
+				if ( node.name.includes('Shell') ) {
+					objectsToRotate.push(node)
+				}
 				
 			});
 	
@@ -177,14 +162,9 @@ function init() {
 
 				node.layers.enable( BLOOM_SCENE );
 			
-				// if ( node.name.includes('Shell') ) {
-				// 	objectsToRotate.push(node)
-				// 	if (node.children.length > 0){
-				// 		node.children[1].layers.enable( BLOOM_SCENE );
-				// 	} else {
-				// 		node.layers.enable( BLOOM_SCENE );
-				// 	}
-				// }
+				if ( node.name.includes('Shell') ) {
+					objectsToRotate.push(node)
+				}
 				
 			});
 	
@@ -311,14 +291,10 @@ function init() {
 
 	window.addEventListener( 'resize', onWindowResize );
 
-
-	let topPos = 0;
-	let down;
-
 	$(window).scroll(function() {
 
-
 		topPos = $(this).scrollTop();
+		console.log(topPos)
 
 		if (topPos > 50) {
 			$('header').css('background-color','rgba(255,255,255,1');
@@ -331,14 +307,7 @@ function init() {
 			$('.logo_main2').css('opacity','1');
 			$('.logo_main').css('opacity','0');
 		}
-		if (topPos > 250) {
-			down = true
-		} else {
-			down = false
-		}
-
 	});
-
 
 }
 
@@ -365,12 +334,13 @@ function render() {
 			break;
 		case 'Scene with Glow':
 		default:
-			// render scene with bloom
-			renderBloom( true );
 
-			// render the entire scene, then render bloom scene on top
-			finalComposer.render();
-			break;
+		// render scene with bloom
+		renderBloom( true );
+
+		// render the entire scene, then render bloom scene on top
+		finalComposer.render();
+		break;
 
 	}
 
@@ -416,14 +386,62 @@ if ( materials[ obj.uuid ] ) {
 
 }
 
+const moveCloudContainer = (x,y,z)=>{
+
+	var cpA = {x: cloudContainer.position.x, y:cloudContainer.position.y, z:cloudContainer.position.z};
+	var tpA = {x:x,y:y,z:z};
+
+	var tween = new TWEEN.Tween(cpA).to(tpA, 1000);
+	tween.easing(TWEEN.Easing.Quartic.Out);	
+	tween.onUpdate(function () {
+
+		cloudContainer.position.set(cpA.x, cpA.y, cpA.z);
+
+	});
+	tween.onComplete(function () {
+		isMoving = false;
+	});
+	tween.start();
+}
 
 function animate() {
+
+	elapsedTime = clock.getElapsedTime();
+
+	if (topPos < 50) {
+		if(!isMoving){
+			isMoving = true;
+			moveCloudContainer(0,0,0)
+		}
+	}
+	if ((topPos > 750)&&(topPos < 1500)) {
+		if(!isMoving){
+			isMoving = true;
+			moveCloudContainer(-30,0,50);
+		}
+	}
+
+	if ((topPos > 1500)&&(topPos < 2250)) {
+		if(!isMoving){
+			isMoving = true;
+			moveCloudContainer(0,0,100)
+		}
+	}
+
+	if ((topPos > 2250)&&(topPos < 3000)) {
+		if(!isMoving){
+			isMoving = true;
+			moveCloudContainer(-30,0,150)
+		}
+	}
+
+	TWEEN.update();
 
 	// camera.position.x += ( mouseX/5000 - camera.position.x ) * 0.05;
 	// camera.position.y += ( - mouseY/10000 - camera.position.y ) * 0.05;
 
-	for (let i=0;i<objectsToRotate;i++){
-		objectsToRotate[i].rotation.y += 0.1;
+	for (let i=0;i<objectsToRotate.length;i++){
+		objectsToRotate[i].rotation.y = elapsedTime * 0.1;
 	}
 	render();
 	requestAnimationFrame( animate );

@@ -51,10 +51,10 @@ section {
 	margin: 0 auto;
 }
 section.odd {
-	background: rgba(10, 63, 77, 0.9);
+	background: rgba(10, 63, 77, 0.4);
 }
 section.even {
-	background: rgba(10, 63, 77, 0.8)
+	background: rgba(10, 63, 77, 0.2)
 }
 footer {
 	width: 100%;
@@ -119,7 +119,6 @@ input:focus {
 .mobile {
 	display: none;
 	margin: 20px auto;
-	pos
 }
 .logo_main_page {
 	width: 240px;

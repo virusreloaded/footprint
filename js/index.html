@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Futurebox - AI driven AR/VR solution for web</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<meta property="og:title" content="Futurebox - AI driven AR/VR solution for web">
+		<meta name="twitter:title" content="Futurebox - AI driven AR/VR solution for web">
+		
+		<meta name="description" content="Platform with a neural network that interprets blueprints and produces 3D interiors. AI generates different interior styles. Furniture, kitchens and household appliances from local stores and suppliers. Explore in AR/VR.
+
+		">
+		<meta property="og:description" content="Platform with a neural network that interprets blueprints and produces 3D interiors. AI generates different interior styles. Furniture, kitchens and household appliances from local stores and suppliers. Explore in AR/VR.
+
+		">
+		<meta name="twitter:description" content="Platform with a neural network that interprets blueprints and produces 3D interiors. AI generates different interior styles. Furniture, kitchens and household appliances from local stores and suppliers. Explore in AR/VR.
+
+		">
+		
+		<meta property="og:image" content="img/bg_social_media.jpg">
+		<meta name="twitter:image" content="img/bg_social_media.jpg">
+		<link rel="icon" href="favicon.svg">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;500&display=swap" rel="stylesheet">
+		<link type="text/css" rel="stylesheet" href="css/style.css">
+		<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+		<script type="text/javascript" src="js/tween.js"></script>
+	</head>
+	<body>
+
+		<div id="container"></div>
+
+		<!-- Import maps polyfill -->
+		<!-- Remove this when import maps will be widely supported -->
+		<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "./build/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
+
+		<script type="module">
+
+			import * as THREE from 'three';
+
+			// import Stats from 'three/addons/libs/stats.module.js';
+
+			import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+			import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+
+
+			let container, stats;
+			let camera, scene, renderer;
+			let controls;
+
+			let bar = 0;
+			let barwidth = 250;
+
+			let assets_loaded = false;
+
+			let clock = new THREE.Clock();
+			// var start_time = Date.now();
+
+			let modelAI;
+			let modelVR;
+
+			let delta;
+
+			let morphAnimationDone = true;
+			let afterAnimationDoneCallback = undefined;
+
+			let lastMophAnimUpdateMS = Date.now();
+			let animationTimeMS = [];
+
+			let plus, targetModel, targetGeom, startGeometry;
+
+			let models = [
+				{
+					name: "ai",
+					file: "ai.obj",
+					offset: new THREE.Vector3(0, 0, 0)
+				},
+				{
+					name: "ar",
+					file: "ar_vr.obj",
+					offset: new THREE.Vector3(0, 0, 0)
+				},
+				{
+					name: "network",
+					file: "sellnet.obj",
+					offset: new THREE.Vector3(0, 0, 0)
+				},
+				{
+					name: "neural",
+					file: "neural.obj",
+					offset: new THREE.Vector3(0, 0, 0)
+				},
+				{
+					name: "x",
+					file: "logo_X.obj",
+					offset: new THREE.Vector3(0, 0, 0)
+				}
+
+				
+			];
+
+			init();
+			animate();
+
+			function init() {
+
+				container = document.getElementById( 'container' );
+
+				//
+
+				renderer = new THREE.WebGLRenderer({antialias: false, transparent:true});
+				renderer.setPixelRatio( Math.min(window.devicePixelRatio,2) );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				renderer.toneMapping = THREE.ACESFilmicToneMapping;
+				// renderer.toneMapping = THREE.ReinhardToneMapping;
+				container.appendChild( renderer.domElement );
+
+				//
+
+				scene = new THREE.Scene();
+				// scene.fog = new THREE.Fog(0x554843, 10, 1000 );
+
+				let w = window.innerWidth;
+				let h = window.innerHeight;
+
+				camera = new THREE.PerspectiveCamera( 25, w / h, 1, 20000 );
+				camera.position.set( 0, 0, 10 );
+				if (window.innerWidth < 920) {
+					camera.position.set( 0, 0, 25 );
+				}
+
+				THREE.DefaultLoadingManager.onProgress = function ( item, loaded, total ) {
+
+				bar = Math.floor( barwidth * loaded / total );
+				$("#bar").css("width", ""+bar+"px");
+					// console.log(loaded/total);
+					if (loaded/total == 1) {
+						$('#progressbar').fadeOut('600');
+						$( "#progress" ).fadeOut('600');
+						$(".loader2").fadeOut('600');
+					}
+				};
+				var onProgress = function ( xhr ) {
+					if ( xhr.lengthComputable ) {
+						var percentComplete = xhr.loaded / xhr.total * 100;
+						console.log( Math.round(percentComplete, 2) + '% downloaded' );
+					}
+				};
+				var onError = function ( xhr ) { };
+
+				loadModels(function() {
+
+					plus = new THREE.Points(
+							new THREE.BufferGeometry(),
+							new THREE.PointsMaterial( { color: 0x33B8FF, size: 2, sizeAttenuation: false, map: generateSprite(), blending: THREE.AdditiveBlending, depthTest: false, transparent: true }));
+					scene.add(plus);
+
+					// set initial model (no animation)
+					setModel("ai");
+
+					// morph into other model (check parameters for speed, rotation, etc)
+					morphIntoModel("x");
+
+					// you can also tell it to do something after the animation is complete:
+					// we morph back into AI model after waiting 2000 ms
+					doAfterAnimationFinishes(2000, function() {
+
+						// morphIntoModel("AR VR");
+					});
+				});
+
+				//
+
+				controls = new OrbitControls( camera, renderer.domElement );
+				// controls.maxPolarAngle = Math.PI * 0.495;
+				// controls.target.set( 0, 10, 0 );
+				controls.minDistance = 1.0;
+				controls.maxDistance = 20.0;
+				controls.update();
+
+				//
+
+				// stats = new Stats();
+				// container.appendChild( stats.dom );
+
+				// GUI
+
+				// const gui = new GUI();
+				// gui.close();
+
+				// const folderSky = gui.addFolder( 'Sky' );
+				// folderSky.add( parameters, 'elevation', 0, 90, 0.1 ).onChange( updateSun );
+				// folderSky.add( parameters, 'azimuth', - 180, 180, 0.1 ).onChange( updateSun );
+				// folderSky.open();
+
+				// const waterUniforms = water.material.uniforms;
+
+				// const folderWater = gui.addFolder( 'Water' );
+				// folderWater.add( waterUniforms.distortionScale, 'value', 0, 8, 0.1 ).name( 'distortionScale' );
+				// folderWater.add( waterUniforms.size, 'value', 0.1, 10, 0.1 ).name( 'size' );
+				// folderWater.open();
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize );
+
+			}
+
+			function loadModels(then) {
+				let remaining = models.length;
+
+				models.forEach((model) => {
+					const oLoader = new OBJLoader().setPath( 'models/' );
+					oLoader.load(model.file, (object) => {
+						model.positions = [];
+						object.traverse( function ( child ) {
+							if (child.geometry) {
+								let vertices;
+								if (child.geometry.isBufferGeometry)
+									vertices = child.geometry.attributes['position'].array;
+								else {
+									child.geometry.vertices.forEach(v => {
+										vertices.push(v);
+									});
+								}
+
+								for (let i = 0; i < vertices.length; i += 3) {
+
+									model.positions.push(vertices[i + 0] + model.offset.x);
+									model.positions.push(vertices[i + 1] + model.offset.y);
+									model.positions.push(vertices[i + 2] + model.offset.z);
+								}
+							}
+						});
+
+						remaining--;
+						if (remaining === 0)
+							then();
+					});
+				});
+			}
+
+			function generateSprite() {
+				let canvas = document.createElement('canvas');
+				canvas.width = 16;
+				canvas.height = 16;
+				let context = canvas.getContext('2d');
+				let gradient = context.createRadialGradient(
+					canvas.width / 2, canvas.height / 2,
+					0,
+					canvas.width / 2, canvas.height / 2,
+					canvas.width / 2);
+					gradient.addColorStop(0, 'rgba(255,255,255,1)');
+					gradient.addColorStop(0.3, 'rgba(41,196,152,1)');
+					gradient.addColorStop(0.6, 'rgba(13,159,52,1)');
+					gradient.addColorStop(1, 'rgba(5,92,23,1)');
+				//gradient.addColorStop(1, 'rgba(0,0,0,1)');
+				context.fillStyle = gradient;
+				context.fillRect(0, 0, canvas.width, canvas.height);
+				let texture = new THREE.Texture(canvas);
+				texture.needsUpdate = true;
+				return texture;
+			}
+
+			function modRound(value, precision){
+
+				let precision_number = Math.pow(10, precision);
+				return Math.round(value * precision_number) / precision_number;
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setPixelRatio( Math.min(window.devicePixelRatio,2) );
+
+			}
+
+			function animate() {
+
+				delta = clock.getDelta();
+
+				requestAnimationFrame( animate );
+				render();
+				updateMorphAnimation();
+
+			}
+
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+
+			let done = false;
+			function staticWrite(o) {
+				if (!done)
+				{
+					done = true;
+					console.log(o);
+				}
+			}
+
+			function updateMorphAnimation() {
+				if (!morphAnimationDone) {
+
+					let frameTime = (Date.now() - lastMophAnimUpdateMS);
+					lastMophAnimUpdateMS = Date.now();
+
+					plus.geometry.attributes['position'].needsUpdate = true;
+
+					let transitionDone = true;
+					for (let i = 0; i < plus.geometry.attributes['position'].array.length / 3; i++) {
+
+						let dAnimationProgress = Math.min(frameTime / Math.max(animationTimeMS[i], 1), 1);
+						animationTimeMS[i] -= frameTime;
+
+						let CG = [
+							modRound(plus.geometry.attributes['position'].array[i * 3 + 0], 8),
+							modRound(plus.geometry.attributes['position'].array[i * 3 + 1], 8),
+							modRound(plus.geometry.attributes['position'].array[i * 3 + 2], 8)
+						];
+
+						let OG = [
+							modRound(targetModel.positions[i * 3 + 0], 8),
+							modRound(targetModel.positions[i * 3 + 1], 8),
+							modRound(targetModel.positions[i * 3 + 2], 8)
+						];
+
+						for (let dim = 0; dim < 3; dim++)
+						{
+							if (Math.abs(CG[dim] - OG[dim]) > 0.001) {
+								if ( CG[dim] < OG[dim] ) {
+									plus.geometry.attributes['position'].array[i * 3 + dim] += (OG[dim] - CG[dim]) * dAnimationProgress;
+								} else {
+									plus.geometry.attributes['position'].array[i * 3 + dim] -= (CG[dim] - OG[dim]) * dAnimationProgress;
+								}
+								transitionDone = false;
+							}
+						}
+					}
+
+					if (transitionDone) {
+						morphAnimationDone = true;
+						if (afterAnimationDoneCallback) {
+							afterAnimationDoneCallback();
+							afterAnimationDoneCallback = undefined;
+						}
+					}
+				}
+
+			}
+
+			function getModelByName(name) {
+				for (let i = 0; i < models.length; i++) {
+					if (models[i].name === name)
+						return models[i];
+				}
+				return undefined;
+			}
+
+			function setModel(modelName) {
+				let model = getModelByName(modelName);
+				if (!model) {
+					console.log("Couldn't find model: " + modelName);
+					return;
+				}
+				plus.geometry.setAttribute('position', new THREE.BufferAttribute( new Float32Array(model.positions), 3 ));
+			}
+
+			// harmony must be 0-1
+			function morphIntoModel(modelName, targetRotation=null, durationMS=1000, harmony=0.8) {
+				let model = getModelByName(modelName);
+				if (!model) {
+					console.log("Couldn't find model: " + modelName);
+					return;
+				}
+
+				targetModel = model;
+				morphAnimationDone = false;
+
+				let geometry = plus.geometry;
+
+				if (animationTimeMS.length !== geometry.attributes['position'].array.length)
+					animationTimeMS.length = geometry.attributes['position'].array.length;
+				animationTimeMS = [];
+				for (let i = 0; i < geometry.attributes['position'].array.length; i++)
+				{
+					animationTimeMS.push(durationMS * (1 - (1 - harmony) * Math.random()));
+				}
+				lastMophAnimUpdateMS = Date.now();
+
+				if (targetRotation !== null) {
+					let rot = {r: plus.rotation.y} ;
+					let tween = new TWEEN.Tween(rot).to({r: targetRotation}, durationMS);
+					tween.easing(TWEEN.Easing.Quartic.Out);
+					tween.onUpdate(function () { plus.rotation.y = rot.r; });
+					tween.start();
+				}
+			}
+
+			function doAfterAnimationFinishes(waitTimeMS, callback) {
+				afterAnimationDoneCallback = () => {setTimeout(callback, waitTimeMS)};
+			}
+
+			$( ".element-four" ).mouseover(function() {
+				let id = $(this).attr('id');
+				morphIntoModel(id);
+			});
+			$( ".element-four" ).mouseout(function() {
+				let id = 'x';
+				morphIntoModel(id);
+			});
+
+		</script>
+		<section id="home">
+			<div class="top-menu">
+				<img class="logo" src="img/logo.svg">
+				<div class="slogan">Discover new dimensions.</div>
+				<a class="button-green">Book access</a>
+			</div>
+			<div class="main-text">
+				<div class="title">
+					Create, explore and sell your real estate in one click
+				</div>
+				<div class="description">
+					First-of-a-kind platform with a neural network that interprets blueprints and produces 3D interiors.
+With artificial intelligence that generates different interior styles and allows the user to preview furniture, kitchens and household appliances from a database of items available from local stores and suppliers. Explore in AR/VR and buy everything in one click.
+				</div>
+				<div class="elements-container">
+					<div class="element-four" id="network">
+						<div class="element-logo">
+							<img src="img/icon-largest.svg">
+						</div>
+						<div class="element-title">
+							Largest network
+						</div>
+						<div class="element-desc">
+							Over 500 websites all over the world, generating thousands of leads every day, makes us biggest network in the world
+						</div>
+					</div>
+					<div class="element-four" id="neural">
+						<div class="element-logo">
+							<img src="img/icon-neural.svg">
+						</div>
+						<div class="element-title">
+							Neural network
+						</div>
+						<div class="element-desc">
+							Neural network recognizes blueprints and automatically generates interior box
+						</div>
+					</div>
+					<div class="element-four" id="ai">
+						<div class="element-logo">
+							<img src="img/icon-ai.svg">
+						</div>
+						<div class="element-title">
+							AI-powered platform
+						</div>
+						<div class="element-desc">
+							AI algorythms create interior design in automated way, including kitchens.
+						</div>
+					</div>
+					<div class="element-four" id="ar">
+						<div class="element-logo">
+							<img src="img/icon-ar.svg">
+						</div>
+						<div class="element-title">
+							AR/VR support
+						</div>
+						<div class="element-desc">
+							Dive into the the scene using VR glasses, or drop your interior on the floor and explore it in 1 click!
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+		<div class="loader2">
+			<div id="progress" style="display: block;">
+				<img class="logo_load" src="img/logo.svg"><br><br>
+				<center>
+					LOADING...
+					<div id="progressbar" class="shadow"><div id="bar" class="shadow"></div></div>
+				</center>
+			</div>
+		</div>
+	</body>
+</html>
